@@ -4,15 +4,15 @@ type Game struct {
 	ID          uint
 	CategoryID  uint
 	QuestionIDs []uint
-	Player      []Player
+	PlayerIDs   []uint
 }
 
 type Player struct {
-	ID      uint
-	UserID  uint
-	GameID  uint
-	Score   uint
-	Answers []PlayerAnswer
+	ID         uint
+	UserID     uint
+	GameID     uint
+	Score      uint
+	AnswersIDs []uint
 }
 
 type PlayerAnswer struct {
