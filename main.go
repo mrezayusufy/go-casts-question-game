@@ -1,15 +1,40 @@
 package main
 
 import (
+	"fmt"
 	"gameapp/database"
 	"gameapp/dto"
-	userrepository "gameapp/repository/user"
+	UserRepository "gameapp/repository/user"
 	UserService "gameapp/service/userservice"
 	"log"
+	"net/http"
 )
 
 func main() {
-	// load configuration
+	const (
+		port    = "8080"
+		address = "localhost:" + port
+	)
+
+	http.HandleFunc("/", homeHandler)
+	http.HandleFunc("/users/register", userRegisterHandler)
+	log.Printf("you are listening to %s...", address)
+	http.ListenAndServe(address, nil)
+}
+func homeHandler(res http.ResponseWriter, req *http.Request) {
+	if req.Method != http.MethodGet {
+		fmt.Fprintf(res, "invalid method")
+		return
+	}
+	fmt.Fprintf(res, "Hello user")
+
+}
+func userRegisterHandler(res http.ResponseWriter, req *http.Request) {
+	if req.Method != http.MethodPost {
+		fmt.Fprintf(res, "You are not Registered")
+		return
+	}
+	// config
 	cfg := database.Config{
 		Host:     "localhost",
 		Port:     "3306",
@@ -17,23 +42,24 @@ func main() {
 		Password: "",
 		DBName:   "gameapp_db",
 	}
-	// 2. create database connect
-	db, err := database.NewConn(cfg)
-	if err != nil {
-		log.Fatalf("failure to connect database: %v", err)
+	// new connection
+	db, dErr := database.NewConn(cfg)
+	if dErr != nil {
+		log.Println("error in connecting to mysq", dErr)
+		return
 	}
 	defer db.Close()
-	// 3. inject into repository
-	userRepo := userrepository.New(db)
-	// 4. inject repository into service
+	// create repository
+	userRepo := UserRepository.New(db)
+	// create service and inject repository in service
 	userService := UserService.New(userRepo)
-	// 5. use service to call create user
-	response, rErr := userService.Register(dto.RegisterRequest{
-		Name:        "Hasan",
-		PhoneNumber: "09020072667",
+	userCreated, ucErr := userService.Register(dto.RegisterRequest{
+		Name:        "Reza",
+		PhoneNumber: "09936064215",
 	})
-	if rErr != nil {
-		log.Fatalf("failure to create user: %v", rErr)
+	if ucErr != nil {
+		fmt.Fprint(res, ucErr)
+		return
 	}
-	log.Printf("user: %+v", response)
+	fmt.Fprintf(res, "{'name':'%s','phone_number':'%s'}", userCreated.User.Name, userCreated.User.PhoneNumber)
 }

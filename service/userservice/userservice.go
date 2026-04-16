@@ -32,10 +32,10 @@ func (s Service) Register(req dto.RegisterRequest) (dto.RegisterResponse, error)
 	// check uniqueness of phone number
 	if isUnique, pErr := s.repo.IsPhoneNumberUnique(req.PhoneNumber); pErr != nil || !isUnique {
 		if pErr != nil {
-			return dto.RegisterResponse{}, fmt.Errorf("unexpected error in validation of phone number %v", pErr)
+			return dto.RegisterResponse{}, fmt.Errorf("❌unexpected error in validation of phone number %v", pErr)
 		}
 		if !isUnique {
-			return dto.RegisterResponse{}, fmt.Errorf("phone is not unique")
+			return dto.RegisterResponse{}, fmt.Errorf("❌phone is not unique")
 		}
 	}
 	// validate name
