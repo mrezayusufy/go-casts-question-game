@@ -20,7 +20,6 @@ help:
 	@echo "Available targets:"
 	@echo "  make register           - Register a user with default data (JSON)"
 	@echo "  make register-json      - Register with custom JSON from file"
-	@echo "  make register-verbose   - Register with verbose curl output"
 	@echo "  make clean              - Remove temporary files"
 	@echo ""
 	@echo "  make register NAME=johndoe PHONE=09030072667
@@ -32,14 +31,6 @@ register:
 		-H "Content-Type: application/json" \
 		-d '{"name":"$(NAME)","phone_number":"$(PHONE)"}'
 	@echo ""
-
-# Registration with verbose output (shows headers, etc.)
-register-verbose:
-	@echo "Registering user (verbose mode): $(PHONE)"
-	@curl -X POST $(REGISTER_URL) \
-		-H "Content-Type: application/json" \
-		-d '{"name":"$(NAME)","phone_number":"$(PHONE)"}' \
-		-v
 
 # Registration using a JSON file
 register-json:
