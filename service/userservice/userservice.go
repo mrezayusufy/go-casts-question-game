@@ -5,15 +5,19 @@ import (
 	"gameapp/dto"
 	"gameapp/entity"
 	"gameapp/pkg/phonenumber"
-	"gameapp/repository"
 )
 
+// contract
+type UserResitory interface {
+	IsPhoneNumberUnique(phonenumber string) (bool, error)
+	Register(user entity.User) (entity.User, error)
+}
 type Service struct {
-	repo repository.UserResitory
+	repo UserResitory
 }
 
 // concret object
-func New(repo repository.UserResitory) *Service {
+func New(repo UserResitory) *Service {
 	return &Service{
 		repo: repo,
 	}
@@ -21,7 +25,8 @@ func New(repo repository.UserResitory) *Service {
 func (s Service) Register(req dto.RegisterRequest) (dto.RegisterResponse, error) {
 	// TODO verification phone number by otp
 	// Validate phone number
-	if phonenumber.IsValid(req.PhoneNumber) {
+
+	if !phonenumber.IsValid(req.PhoneNumber) {
 		return dto.RegisterResponse{}, fmt.Errorf("❌phone number is invalid")
 	}
 	// check uniqueness of phone number

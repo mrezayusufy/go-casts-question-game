@@ -1,0 +1,21 @@
+version: '3.7'
+
+services:
+  gameapp-database:
+    image: mysql:8.0
+    ports:
+      # out-port: in-port
+      - "3306:3306"
+    container_name: gameapp-database
+    volumes:
+      - dbdata:/var/lib/mysql
+    restart: always
+    command: ["mysqld", "--character-set-server=utf8mb4","--coloection-server=utf8mb4_unicode_ci"]
+    environment:
+      MYSQL_ROOT_PASSWORD: gameappRoo7325445fsdf
+      MYSQL_DATABASE: gameapp_db
+      MYSQL_USER: gameapp
+      MYSQL_PASSWORD: gameapp321
+
+valumes:
+  dbdata:

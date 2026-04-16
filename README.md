@@ -103,6 +103,13 @@ Feel free to open issues or pull requests. Please follow the code style guidelin
 docker pull mysql:8.0
 docker image ls | grep "mysql"
 -mysql 8.0 csfdsdee34234 32 hours age 544mb
+docker compose up -d # detach the command line
+```
+## 9. mysql
+```mysql
+> show databases;
+> use gameapp_db;
+> show tables
 ```
 --- 
 
