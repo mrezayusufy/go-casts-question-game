@@ -37,6 +37,7 @@ func (s Service) Register(req dto.RegisterRequest) (dto.RegisterResponse, error)
 		if !isUnique {
 			return dto.RegisterResponse{}, fmt.Errorf("❌phone is not unique")
 		}
+
 	}
 	// validate name
 	if len(req.Name) < 3 {

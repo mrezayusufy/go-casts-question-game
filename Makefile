@@ -12,7 +12,7 @@ NC = \033[0m # No Color
 
 # Default user data (modify as needed)
 NAME ?= testuser
-PHONE ?= 09030072557 
+PHONE ?= 09110072557
 
 .PHONY: help register register-json register-verbose register-file clean
 

@@ -3,8 +3,8 @@ package dto
 import "gameapp/entity"
 
 type RegisterRequest struct {
-	Name        string
-	PhoneNumber string
+	Name        string `json:"name"`
+	PhoneNumber string `json:"phone_number"`
 }
 type RegisterResponse struct {
 	User entity.User
