@@ -4,7 +4,7 @@
 URL = http://localhost:8080
 ENDPOINT = /users/register
 REGISTER_URL = $(URL)$(ENDPOINT)
-
+LOGIN_URL = $(URL)/users/login
 # Colors for output
 GREEN = \033[0;32m
 RED = \033[0;31m
@@ -29,9 +29,14 @@ register:
 	@echo "Registering user: $(NAME) ($(PHONE))"
 	@curl -X POST $(REGISTER_URL) \
 		-H "Content-Type: application/json" \
-		-d '{"name":"$(NAME)","phone_number":"$(PHONE)"}'
+		-d '{"name":"$(NAME)","phone_number":"$(PHONE)", "password": "test1234"}'
 	@echo ""
-
+login:
+	@echo "Login user: $(NAME) ($(PHONE))"
+	@curl -X POST $(LOGIN_URL) \
+		-H "Content-Type: application/json" \
+		-d '{"phone_number":"$(PHONE)", "password": "test1234"}'
+	@echo ""
 # Registration using a JSON file
 register-json:
 	@echo "Registering user using JSON file"
