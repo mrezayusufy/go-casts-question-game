@@ -3,9 +3,9 @@ package service
 import (
 	"context"
 	"errors"
+	contract "gameapp/contract"
 	"gameapp/dto"
 	"gameapp/entity"
-	userrepository "gameapp/repository/user"
 )
 
 type AuthService interface {
@@ -14,12 +14,12 @@ type AuthService interface {
 }
 
 type Auth struct {
-	userRepo        userrepository.UserRepository
+	userRepo        contract.User
 	passwordService password
 	tokenService    Token
 }
 
-func NewAuth(userRepo userrepository.UserRepository, ps password, ts Token) *Auth {
+func NewAuth(userRepo contract.User, ps password, ts Token) *Auth {
 
 	return &Auth{
 		userRepo:        userRepo,

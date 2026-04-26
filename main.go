@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"gameapp/database"
 	"gameapp/dto"
+	repository "gameapp/repository"
 	UserRepository "gameapp/repository/user"
 	service "gameapp/service"
 	"io"
@@ -96,10 +97,12 @@ func LoginHandler(w http.ResponseWriter, req *http.Request) {
 	defer db.Close()
 	ctx := req.Context()
 	// create repository
-	userRepo := UserRepository.New(db)
+	userRepo := repository.NewUser(db)
 	// create service and inject repository into service
-	userService := service.NewUser(userRepo)
-	token, ucErr := userService.Login(ctx, request)
+	passwordService := service.NewPassword(10)
+	tokenService := service.NewToken([]byte("question-game-app-secret"))
+	authService := service.NewAuth(userRepo, *passwordService, *tokenService)
+	token, ucErr := authService.Login(ctx, &request)
 	if ucErr != nil {
 		fmt.Fprint(w, ucErr)
 		return
