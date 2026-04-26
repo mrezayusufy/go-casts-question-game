@@ -1,8 +1,9 @@
-package userservice
+package service
 
 import (
 	"context"
 	"fmt"
+	"gameapp/contract"
 	"gameapp/dto"
 	"gameapp/entity"
 	"gameapp/pkg/phonenumber"
@@ -11,23 +12,18 @@ import (
 )
 
 // contract
-type UserResitory interface {
-	IsPhoneNumberUnique(phonenumber string) (bool, error)
-	Register(user entity.User) (entity.User, error)
-	FindByPhoneNumber(ctx context.Context, phonenumber string) (*entity.User, error)
-	Get(ctx context.Context, id uint) (entity.User, error)
-}
-type Service struct {
-	repo UserResitory
+
+type User struct {
+	repo contract.User
 }
 
-// concret object
-func New(repo UserResitory) *Service {
-	return &Service{
+// constructor injection
+func NewUser(repo contract.User) *User {
+	return &User{
 		repo: repo,
 	}
 }
-func (s Service) Register(req dto.RegisterRequest) (dto.RegisterResponse, error) {
+func (s User) Register(req dto.RegisterRequest) (dto.RegisterResponse, error) {
 	// TODO verification phone number by otp
 	// Validate phone number
 
@@ -76,7 +72,7 @@ func (s Service) Register(req dto.RegisterRequest) (dto.RegisterResponse, error)
 	}, nil
 }
 
-func (s *Service) Login(ctx context.Context, req dto.LoginRequest) (dto.LoginResponse, error) {
+func (s *User) Login(ctx context.Context, req dto.LoginRequest) (dto.LoginResponse, error) {
 	// check the exitance of phone number from repository
 	// get the user by phonenumber
 	user, err := s.repo.FindByPhoneNumber(ctx, req.PhoneNumber)
@@ -92,9 +88,10 @@ func (s *Service) Login(ctx context.Context, req dto.LoginRequest) (dto.LoginRes
 	// return ok
 	return dto.LoginResponse{Token: "✅ You have successfully login!😎🖐😀"}, nil
 }
-func (s *Service) Get(ctx context.Context, id uint) (*entity.User, error) {
+func (s *User) Get(ctx context.Context, id uint) (*entity.User, error) {
 	// find user by id
 	user, err := s.repo.Get(ctx, id)
+
 	if err != nil {
 		return nil, err
 	}

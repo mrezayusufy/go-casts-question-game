@@ -6,10 +6,11 @@ import (
 	"gameapp/database"
 	"gameapp/dto"
 	UserRepository "gameapp/repository/user"
-	UserService "gameapp/service/userservice"
+	service "gameapp/service"
 	"io"
 	"log"
 	"net/http"
+	"strings"
 )
 
 func main() {
@@ -21,6 +22,7 @@ func main() {
 	http.HandleFunc("/", homeHandler)
 	http.HandleFunc("/users/register", userRegisterHandler)
 	http.HandleFunc("/users/login", LoginHandler)
+	http.HandleFunc("/users/profile", UserProfileHandler)
 	log.Printf("you are listening to %s...", address)
 	http.ListenAndServe(address, nil)
 }
@@ -30,6 +32,19 @@ func homeHandler(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 	fmt.Fprintf(res, "Hello user")
+
+}
+func UserProfileHandler(w http.ResponseWriter, req *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	if req.Method != http.MethodGet {
+		w.WriteHeader(http.StatusUnsupportedMediaType)
+		fmt.Fprintf(w, `{"error": "%s method is not allowed"}`, req.Method)
+
+		return
+	}
+	path := strings.TrimPrefix(req.URL.Path, "/profile/")
+	id := strings.Trim(path, "/")
+	fmt.Fprintf(w, "user profile %s\n", id)
 
 }
 func LoginHandler(w http.ResponseWriter, req *http.Request) {
@@ -83,8 +98,8 @@ func LoginHandler(w http.ResponseWriter, req *http.Request) {
 	// create repository
 	userRepo := UserRepository.New(db)
 	// create service and inject repository into service
-	userService := UserService.New(userRepo)
-	userCreated, ucErr := userService.Login(ctx, request)
+	userService := service.NewUser(userRepo)
+	token, ucErr := userService.Login(ctx, request)
 	if ucErr != nil {
 		fmt.Fprint(w, ucErr)
 		return
@@ -92,7 +107,7 @@ func LoginHandler(w http.ResponseWriter, req *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(userCreated)
+	json.NewEncoder(w).Encode(token)
 
 }
 func userRegisterHandler(res http.ResponseWriter, req *http.Request) {
@@ -143,7 +158,7 @@ func userRegisterHandler(res http.ResponseWriter, req *http.Request) {
 	// create repository
 	userRepo := UserRepository.New(db)
 	// create service and inject repository into service
-	userService := UserService.New(userRepo)
+	userService := service.NewUser(userRepo)
 	userCreated, ucErr := userService.Register(request)
 	if ucErr != nil {
 		fmt.Fprint(res, ucErr)
