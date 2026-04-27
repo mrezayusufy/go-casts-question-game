@@ -116,9 +116,7 @@ func LoginHandler(w http.ResponseWriter, req *http.Request) {
 	// create repository
 	userRepo := repository.NewUser(db)
 	// create service and inject repository into service
-	passwordService := service.NewPassword(10)
-	tokenService := service.NewToken([]byte("question-game-app-secret"))
-	authService := service.NewAuth(userRepo, *passwordService, *tokenService)
+	authService := service.NewAuth(userRepo)
 	token, ucErr := authService.Login(ctx, &request)
 	if ucErr != nil {
 		fmt.Fprint(w, ucErr)

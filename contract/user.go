@@ -11,3 +11,11 @@ type User interface {
 	FindByPhoneNumber(ctx context.Context, phonenumber string) (*entity.User, error)
 	Get(ctx context.Context, id uint) (entity.User, error)
 }
+type UserRepositoryInterface interface {
+	Create(user *entity.User) error
+	Update(user *entity.User) error
+	Delete(id uint) error
+	ExistsByPhoneNumber(phonenumber string) (bool, error)
+	FindByID(id uint) (*entity.User, error)
+	FindByPhoneNumber(phonenumber string) (entity.User, error)
+}

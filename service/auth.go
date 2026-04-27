@@ -22,10 +22,11 @@ type Auth struct {
 	tokenService Token
 }
 
-func NewAuth(userRepo contract.User, ts Token) *Auth {
+func NewAuth(userRepo contract.User) *Auth {
+	tokenService := NewToken([]byte("game-app-secret-key"))
 	return &Auth{
 		userRepo:     userRepo,
-		tokenService: ts,
+		tokenService: *tokenService,
 	}
 }
 
