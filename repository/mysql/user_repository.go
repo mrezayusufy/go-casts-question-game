@@ -63,11 +63,11 @@ func (r *UserRepository) ExistsByPhoneNumber(phoneNumber string) (bool, error) {
 }
 
 // find by phone number
-func (r *UserRepository) FindByPhoneNumber(phonenumber string) (user *entity.User, err error) {
+func (r *UserRepository) FindByPhoneNumber(phonenumber string) (*entity.User, error) {
 	// query
 	query := `SELECT id, name, phone_number FROM users WHERE phone_number = ?;`
-
-	err = r.db.QueryRow(query, phonenumber).Scan(&user.ID, &user.Name, &user.PhoneNumber)
+	user := &entity.User{}
+	err := r.db.QueryRow(query, phonenumber).Scan(&user.ID, &user.Name, &user.PhoneNumber)
 	if err != nil {
 		return nil, err
 	}
@@ -75,11 +75,11 @@ func (r *UserRepository) FindByPhoneNumber(phonenumber string) (user *entity.Use
 }
 
 // find by id
-func (r *UserRepository) FindByID(phonenumber string) (user *entity.User, err error) {
+func (r *UserRepository) FindByID(phonenumber string) (*entity.User, error) {
 	// query
 	query := `SELECT id, name, phone_number FROM users WHERE phone_number = ?;`
-
-	err = r.db.QueryRow(query, phonenumber).Scan(&user.ID, &user.Name, &user.PhoneNumber)
+	user := &entity.User{}
+	err := r.db.QueryRow(query, phonenumber).Scan(&user.ID, &user.Name, &user.PhoneNumber)
 	if err != nil {
 		return nil, err
 	}
