@@ -12,18 +12,20 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-type AuthService interface {
-	Login(ctx context.Context, req dto.LoginRequest) (*entity.User, error)
-	validateUser(ctx context.Context, phonenumber, password string) (*entity.User, error)
-}
+var (
+	ErrUserExists         = errors.New("user already exists")
+	ErrInvalidCredentials = errors.New("invalid credentials")
+	ErrUserNotFound       = errors.New("user not found")
+	ErrWrongPassword      = errors.New("wrong password")
+)
 
 type Auth struct {
-	userRepo     contract.User
+	userRepo     contract.UserRepositoryInterface
 	tokenService Token
 }
 
-func NewAuth(userRepo contract.User) *Auth {
-	tokenService := NewToken([]byte("game-app-secret-key"))
+func NewAuth(userRepo contract.UserRepositoryInterface, jwtSecret string) *Auth {
+	tokenService := NewToken([]byte(jwtSecret))
 	return &Auth{
 		userRepo:     userRepo,
 		tokenService: *tokenService,
@@ -38,7 +40,7 @@ func (s *Auth) Login(ctx context.Context, req *dto.LoginRequest) (*string, error
 		return nil, errors.New("email and password is required")
 	}
 	// find by number
-	user, err := s.userRepo.FindByPhoneNumber(ctx, req.PhoneNumber)
+	user, err := s.userRepo.FindByPhoneNumber(req.PhoneNumber)
 	if err != nil {
 		return nil, err
 	}
@@ -51,6 +53,55 @@ func (s *Auth) Login(ctx context.Context, req *dto.LoginRequest) (*string, error
 		return nil, tErr
 	}
 	return &token, nil
+}
+
+// get profile
+func (s *Auth) GetProfile(id uint) (*entity.Profile, error) {
+	user, err := s.userRepo.FindByID(id)
+	if err != nil {
+		return nil, err
+	}
+	if user == nil {
+		return nil, ErrUserNotFound
+	}
+	return user.ToProfile(), nil
+}
+
+// update profile
+func (s *Auth) UpdateProfile(id uint, name, phonenumber string) (*entity.Profile, error) {
+	user, err := s.userRepo.FindByID(id)
+	if err != nil {
+		return nil, err
+	}
+	if user == nil {
+		return nil, ErrUserNotFound
+	}
+	user.Name = name
+	user.PhoneNumber = phonenumber
+	if err := s.userRepo.Update(user); err != nil {
+		return nil, err
+	}
+	return user.ToProfile(), nil
+}
+func (s *Auth) ChangePassword(id uint, oldPassword, newPassword string) error {
+	user, err := s.userRepo.FindByID(id)
+	if err != nil {
+		return err
+	}
+	if user == nil {
+		return ErrUserNotFound
+	}
+	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(oldPassword)); err != nil {
+		return err
+	}
+
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(newPassword), bcrypt.DefaultCost)
+	if err != nil {
+		return err
+	}
+
+	user.Password = string(hashedPassword)
+	return s.userRepo.Update(user)
 }
 
 // register user
