@@ -20,7 +20,7 @@ func (r *UserRepository) Create(user *entity.User) error {
 	// query
 	query := `
 		INSERT INTO users (phone_number, name, password, created_at, updated_at) 
-		VALUES (?, ?, ?, NOW(), NOW())
+		VALUES (?, ?, ?, NOW(), NOW());
 	`
 	// db execute and get result
 	result, err := r.db.Exec(query, user.PhoneNumber, user.Name, user.Password)
@@ -40,11 +40,19 @@ func (r *UserRepository) Create(user *entity.User) error {
 
 // update
 func (r *UserRepository) Update(user *entity.User) error {
-
-	return nil
+	// query
+	query := `UPDATE users SET name = ?, phone_number = ?, updated_at = NOW() WHERE id = ?;`
+	_, err := r.db.Exec(query, user.Name, user.PhoneNumber, user.ID)
+	return err
 }
 
 // delete
+func (r *UserRepository) Delete(id uint) error {
+	query := `DELETE FROM users WHERE id = ?`
+	_, err := r.db.Exec(query, id)
+	return err
+}
+
 // Exists By PhoneNumber
 func (r *UserRepository) ExistsByPhoneNumber(phoneNumber string) (bool, error) {
 	// query
@@ -55,4 +63,25 @@ func (r *UserRepository) ExistsByPhoneNumber(phoneNumber string) (bool, error) {
 }
 
 // find by phone number
+func (r *UserRepository) FindByPhoneNumber(phonenumber string) (user *entity.User, err error) {
+	// query
+	query := `SELECT id, name, phone_number FROM users WHERE phone_number = ?;`
+
+	err = r.db.QueryRow(query, phonenumber).Scan(&user.ID, &user.Name, &user.PhoneNumber)
+	if err != nil {
+		return nil, err
+	}
+	return user, nil
+}
+
 // find by id
+func (r *UserRepository) FindByID(phonenumber string) (user *entity.User, err error) {
+	// query
+	query := `SELECT id, name, phone_number FROM users WHERE phone_number = ?;`
+
+	err = r.db.QueryRow(query, phonenumber).Scan(&user.ID, &user.Name, &user.PhoneNumber)
+	if err != nil {
+		return nil, err
+	}
+	return user, nil
+}
