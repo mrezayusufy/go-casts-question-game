@@ -120,6 +120,43 @@ func (h *Auth) GetProfile(w http.ResponseWriter, r *http.Request) {
 }
 
 // update profile
+func (h *Auth) UpdateProfile(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPut {
+		h.writeError(w, http.StatusMethodNotAllowed, "method not allowed")
+
+		return
+	}
+
+	userID := getUserIDFromContext(r)
+	if userID == 0 {
+		h.writeError(w, http.StatusUnauthorized, "unauthorized")
+
+		return
+	}
+
+	var req dto.UpdateProfileRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		h.writeError(w, http.StatusBadRequest, "invalid request body")
+
+		return
+	}
+
+	if req.Name == "" {
+		h.writeError(w, http.StatusBadRequest, "name is required")
+
+		return
+	}
+
+	profile, err := h.authService.UpdateProfile(userID, req.Name, req.PhoneNumber)
+	if err != nil {
+		h.writeError(w, http.StatusInternalServerError, "internal server error")
+
+		return
+	}
+
+	h.writeJSON(w, http.StatusOK, profile)
+}
+
 // change password
 // write json
 func (h *Auth) writeJSON(w http.ResponseWriter, status int, data interface{}) {

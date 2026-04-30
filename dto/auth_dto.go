@@ -13,7 +13,8 @@ type LoginResponse struct {
 	Token string `json:"token"`
 }
 type UpdateProfileRequest struct {
-	Name string `json:"name"`
+	Name        string `json:"name"`
+	PhoneNumber string `json:"phone_number"`
 }
 type ChangePasswordRequest struct {
 	OldPassword string `json:"old_password"`
