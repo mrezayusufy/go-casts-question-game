@@ -213,7 +213,7 @@ func (h *Auth) writeJSON(w http.ResponseWriter, status int, data interface{}) {
 
 // write error
 func (h *Auth) writeError(w http.ResponseWriter, status int, msg string) {
-
+	h.writeJSON(w, status, dto.ErrorResponse{Error: msg})
 }
 
 // get user id from context
