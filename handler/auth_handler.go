@@ -6,6 +6,7 @@ import (
 	"gameapp/dto"
 	"gameapp/service"
 	"net/http"
+	"strconv"
 )
 
 type Auth struct {
@@ -93,6 +94,31 @@ func (h *Auth) Login(w http.ResponseWriter, r *http.Request) {
 }
 
 // get profile
+func (h *Auth) GetProfile(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		h.writeError(w, http.StatusMethodNotAllowed, "method not allowed")
+
+		return
+	}
+	userID := getUserIDFromContext(r)
+	if userID == 0 {
+		h.writeError(w, http.StatusUnauthorized, "unauthorized")
+		return
+	}
+
+	profile, err := h.authService.GetProfile(userID)
+	if err != nil {
+		if errors.Is(err, service.ErrUserNotFound) {
+			h.writeError(w, http.StatusNotFound, "user not found")
+			return
+		}
+		h.writeError(w, http.StatusInternalServerError, "internal service error")
+
+		return
+	}
+	h.writeJSON(w, http.StatusOK, profile)
+}
+
 // update profile
 // change password
 // write json
@@ -108,4 +134,16 @@ func (h *Auth) writeError(w http.ResponseWriter, status int, msg string) {
 }
 
 // get user id from context
+func getUserIDFromContext(r *http.Request) uint {
+	userIDStr := r.Context().Value("user_id")
+	if userIDStr == nil {
+		return 0
+	}
+	userID, err := strconv.ParseUint(userIDStr.(string), 10, 64)
+	if err != nil {
+		return 0
+	}
+	return uint(userID)
+}
+
 // get path params
