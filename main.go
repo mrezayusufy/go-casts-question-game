@@ -35,34 +35,7 @@ func homeHandler(res http.ResponseWriter, req *http.Request) {
 
 }
 func UserProfileHandler(w http.ResponseWriter, req *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-	if req.Method != http.MethodGet {
-		w.WriteHeader(http.StatusUnsupportedMediaType)
-		fmt.Fprintf(w, `{"error": "%s method is not allowed"}`, req.Method)
-
-		return
-	}
-	// config
-	cfg := database.Config{
-		Host:     "localhost",
-		Port:     "3306",
-		User:     "root",
-		Password: "",
-		DBName:   "gameapp_db",
-	}
-	// new connection
-	db, dErr := database.NewConn(cfg)
-	if dErr != nil {
-		log.Println("error in connecting to mysq", dErr)
-		return
-	}
-	defer db.Close()
-	ctx := req.Context()
-	// create repository
-	userRepo := repository.NewUser(db)
-	passwordService := service.NewPassword(10)
-	tokenService := service.NewToken([]byte("question-game-app-secret"))
-	service.NewAuth(userRepo, *passwordService, *tokenService)
+	panic("implement the user profile handler")
 
 }
 func LoginHandler(w http.ResponseWriter, req *http.Request) {
@@ -116,7 +89,7 @@ func LoginHandler(w http.ResponseWriter, req *http.Request) {
 	// create repository
 	userRepo := repository.NewUser(db)
 	// create service and inject repository into service
-	authService := service.NewAuth(userRepo)
+	authService := service.NewAuth(userRepo, "secret")
 	token, ucErr := authService.Login(ctx, &request)
 	if ucErr != nil {
 		fmt.Fprint(w, ucErr)

@@ -57,6 +57,41 @@ func (h *Auth) Register(w http.ResponseWriter, r *http.Request) {
 }
 
 // login
+func (h *Auth) Login(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		h.writeError(w, http.StatusMethodNotAllowed, "method not allowed")
+
+		return
+	}
+	var req dto.LoginRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		h.writeError(w, http.StatusBadRequest, "invalid request body")
+
+		return
+	}
+
+	if req.PhoneNumber == "" || req.Password == "" {
+		h.writeError(w, http.StatusBadRequest, "email and password is required")
+
+		return
+	}
+	token, err := h.authService.Login(&req)
+	if err != nil {
+		if errors.Is(err, service.ErrInvalidCredentials) || errors.Is(err, service.ErrWrongPassword) {
+			h.writeError(w, http.StatusUnauthorized, "invalid credentials")
+
+			return
+		}
+		h.writeJSON(w, http.StatusInternalServerError, "internal server error")
+
+		return
+	}
+	h.writeJSON(w, http.StatusOK, dto.LoginResponse{
+		Token: *token,
+	})
+
+}
+
 // get profile
 // update profile
 // change password

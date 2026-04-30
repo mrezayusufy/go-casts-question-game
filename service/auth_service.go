@@ -34,7 +34,7 @@ func NewAuth(repo contract.UserRepositoryInterface, jwtSecret string) *Auth {
 
 // methods
 // login
-func (s *Auth) Login(ctx context.Context, req *dto.LoginRequest) (*string, error) {
+func (s *Auth) Login(req *dto.LoginRequest) (*string, error) {
 	// validate password number
 	if len(req.Password) == 0 || len(req.PhoneNumber) == 0 {
 		return nil, errors.New("email and password is required")
