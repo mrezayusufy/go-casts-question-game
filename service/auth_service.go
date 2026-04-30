@@ -20,14 +20,14 @@ var (
 )
 
 type Auth struct {
-	userRepo     contract.UserRepositoryInterface
+	repo         contract.UserRepositoryInterface
 	tokenService Token
 }
 
-func NewAuth(userRepo contract.UserRepositoryInterface, jwtSecret string) *Auth {
+func NewAuth(repo contract.UserRepositoryInterface, jwtSecret string) *Auth {
 	tokenService := NewToken([]byte(jwtSecret))
 	return &Auth{
-		userRepo:     userRepo,
+		repo:         repo,
 		tokenService: *tokenService,
 	}
 }
@@ -40,7 +40,7 @@ func (s *Auth) Login(ctx context.Context, req *dto.LoginRequest) (*string, error
 		return nil, errors.New("email and password is required")
 	}
 	// find by number
-	user, err := s.userRepo.FindByPhoneNumber(req.PhoneNumber)
+	user, err := s.repo.FindByPhoneNumber(req.PhoneNumber)
 	if err != nil {
 		return nil, err
 	}
@@ -57,7 +57,7 @@ func (s *Auth) Login(ctx context.Context, req *dto.LoginRequest) (*string, error
 
 // get profile
 func (s *Auth) GetProfile(id uint) (*entity.Profile, error) {
-	user, err := s.userRepo.FindByID(id)
+	user, err := s.repo.FindByID(id)
 	if err != nil {
 		return nil, err
 	}
@@ -69,7 +69,7 @@ func (s *Auth) GetProfile(id uint) (*entity.Profile, error) {
 
 // update profile
 func (s *Auth) UpdateProfile(id uint, name, phonenumber string) (*entity.Profile, error) {
-	user, err := s.userRepo.FindByID(id)
+	user, err := s.repo.FindByID(id)
 	if err != nil {
 		return nil, err
 	}
@@ -78,13 +78,13 @@ func (s *Auth) UpdateProfile(id uint, name, phonenumber string) (*entity.Profile
 	}
 	user.Name = name
 	user.PhoneNumber = phonenumber
-	if err := s.userRepo.Update(user); err != nil {
+	if err := s.repo.Update(user); err != nil {
 		return nil, err
 	}
 	return user.ToProfile(), nil
 }
 func (s *Auth) ChangePassword(id uint, oldPassword, newPassword string) error {
-	user, err := s.userRepo.FindByID(id)
+	user, err := s.repo.FindByID(id)
 	if err != nil {
 		return err
 	}
@@ -101,22 +101,22 @@ func (s *Auth) ChangePassword(id uint, oldPassword, newPassword string) error {
 	}
 
 	user.Password = string(hashedPassword)
-	return s.userRepo.Update(user)
+	return s.repo.Update(user)
 }
 
 // register user
-func (s User) Register(req dto.RegisterRequest) (dto.RegisterResponse, error) {
+func (s *Auth) Register(req dto.RegisterRequest) (dto.RegisterResponse, error) {
 	// TODO verification number by otp
 
 	if !phonenumber.IsValid(req.PhoneNumber) {
 		return dto.RegisterResponse{}, fmt.Errorf("❌phone number is invalid")
 	}
 	// check uniqueness of number
-	if isUnique, pErr := s.repo.IsPhoneNumberUnique(req.PhoneNumber); pErr != nil || !isUnique {
+	if userExists, pErr := s.repo.FindByPhoneNumber(req.PhoneNumber); pErr != nil || userExists == nil {
 		if pErr != nil {
 			return dto.RegisterResponse{}, fmt.Errorf("❌unexpected error in validation of number %v", pErr)
 		}
-		if !isUnique {
+		if userExists == nil {
 			return dto.RegisterResponse{}, fmt.Errorf("❌phone is not unique")
 		}
 
@@ -139,7 +139,7 @@ func (s User) Register(req dto.RegisterRequest) (dto.RegisterResponse, error) {
 		Name:        req.Name,
 		Password:    string(password),
 	}
-	newUser, err := s.repo.Register(user)
+	err := s.repo.Create(&user)
 	if err != nil {
 		return dto.RegisterResponse{
 			Error: err.Error(),
@@ -147,8 +147,8 @@ func (s User) Register(req dto.RegisterRequest) (dto.RegisterResponse, error) {
 	}
 	// return created user
 	return dto.RegisterResponse{
-		Name:        newUser.Name,
-		PhoneNumber: newUser.PhoneNumber,
+		Name:        user.Name,
+		PhoneNumber: user.PhoneNumber,
 		Message:     " 🎉✨ You have successfully registered! 😃 ",
 	}, nil
 }

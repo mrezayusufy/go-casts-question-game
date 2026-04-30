@@ -17,5 +17,5 @@ type UserRepositoryInterface interface {
 	Delete(id uint) error
 	ExistsByPhoneNumber(phonenumber string) (bool, error)
 	FindByID(id uint) (*entity.User, error)
-	FindByPhoneNumber(phonenumber string) (entity.User, error)
+	FindByPhoneNumber(phonenumber string) (*entity.User, error)
 }
