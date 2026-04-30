@@ -158,6 +158,52 @@ func (h *Auth) UpdateProfile(w http.ResponseWriter, r *http.Request) {
 }
 
 // change password
+func (h *Auth) ChangePassword(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		h.writeError(w, http.StatusMethodNotAllowed, "method post note allowed")
+
+		return
+	}
+	userID := getUserIDFromContext(r)
+	if userID == 0 {
+		h.writeError(w, http.StatusUnauthorized, "unauthorized")
+
+		return
+	}
+
+	var req dto.ChangePasswordRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		h.writeError(w, http.StatusBadRequest, "invalid request body")
+
+		return
+	}
+
+	if req.OldPassword == "" || req.NewPassword == "" {
+		h.writeError(w, http.StatusBadRequest, "old password and new password are required")
+
+		return
+	}
+	if len(req.NewPassword) < 8 {
+		h.writeError(w, http.StatusBadRequest, "new password must be at least 8 charachters")
+
+		return
+	}
+	cErr := h.authService.ChangePassword(userID, req.OldPassword, req.NewPassword)
+	if cErr != nil {
+		if errors.Is(cErr, service.ErrWrongPassword) {
+			h.writeError(w, http.StatusBadRequest, "password or phone number is wrong")
+
+			return
+		}
+		h.writeError(w, http.StatusInternalServerError, "internal server error")
+
+		return
+	}
+
+	h.writeJSON(w, http.StatusOK, dto.MessageResponse{Message: "Password changed successfully!✨🎉✔😀"})
+
+}
+
 // write json
 func (h *Auth) writeJSON(w http.ResponseWriter, status int, data interface{}) {
 	w.Header().Set("Content-Type", "application/json")
