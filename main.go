@@ -1,14 +1,13 @@
 package main
 
 import (
-	"encoding/json"
+	"database/sql"
 	"fmt"
-	"gameapp/database"
-	"gameapp/dto"
-	repository "gameapp/repository"
-	UserRepository "gameapp/repository/user"
-	service "gameapp/service"
-	"io"
+	"gameapp/config"
+	"gameapp/handler"
+	"gameapp/middleware"
+	"gameapp/repository/mysql"
+	"gameapp/service"
 	"log"
 	"net/http"
 )
@@ -18,145 +17,52 @@ func main() {
 		port    = "8080"
 		address = "localhost:" + port
 	)
+	cfg := config.Load()
+	dsn := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?parseTime=true",
+		cfg.DBUser, cfg.DBPassword, cfg.DBHost, cfg.DBPort, cfg.DBName,
+	)
+	db, sErr := sql.Open("mysql", dsn)
+	if sErr != nil {
+		log.Fatalf("failed to connect to database: %v", sErr)
+	}
+	defer db.Close()
 
-	http.HandleFunc("/", homeHandler)
-	http.HandleFunc("/users/register", userRegisterHandler)
-	http.HandleFunc("/users/login", LoginHandler)
-	http.HandleFunc("/users/profile", UserProfileHandler)
+	if err := db.Ping(); err != nil {
+		log.Fatalf("failed to ping database  %v", err)
+	}
+
+	userRepo := mysql.NewUserRepository(db)
+
+	authService := service.NewAuth(userRepo, cfg.JWTSecret)
+
+	authHandler := handler.NewAuth(authService)
+
+	mux := handler.NewSimpleMux()
+
+	mux.HandleFunc("POST", "/api/auth/register", authHandler.Register)
+	mux.HandleFunc("POST", "/api/auth/login", authHandler.Login)
+	// protected routes with middleware
+	protectedMux := handler.NewSimpleMux()
+	protectedMux.HandleFunc("GET", "/api/profile", authHandler.GetProfile)
+	protectedMux.HandleFunc("PUT", "/api/profile", authHandler.UpdateProfile)
+	protectedMux.HandleFunc("POST", "/api/change-password", authHandler.ChangePassword)
+
+	protectedHandler := middleware.AuthMiddleware(cfg.JWTSecret)(protectedMux)
+	// combined router
+	combinedMux := handler.NewSimpleMux()
+	combinedMux.HandleFunc("POST", "/api/auth/register", authHandler.Register)
+	combinedMux.HandleFunc("POST", "/api/auth/login", authHandler.Login)
+	combinedMux.Handle("GET", "/api/profile", protectedHandler)
+	combinedMux.Handle("PUT", "/api/profile", protectedHandler)
+	combinedMux.Handle("POST", "/api/change-password", protectedHandler)
 	log.Printf("you are listening to %s...", address)
-	http.ListenAndServe(address, nil)
-}
-func homeHandler(res http.ResponseWriter, req *http.Request) {
-	if req.Method != http.MethodGet {
-		fmt.Fprintf(res, "invalid method")
-		return
+	log.Printf("API Endpoints:")
+	log.Printf("  POST   /api/auth/register")
+	log.Printf("  POST   /api/auth/login")
+	log.Printf("  GET    /api/profile (protected)")
+	log.Printf("  PUT    /api/profile (protected)")
+	log.Printf("  POST   /api/change-password (protected)")
+	if err := http.ListenAndServe(address, combinedMux); err != nil {
+		log.Fatalf("Failed to start server: %v", err)
 	}
-	fmt.Fprintf(res, "Hello user")
-
-}
-func UserProfileHandler(w http.ResponseWriter, req *http.Request) {
-	panic("implement the user profile handler")
-
-}
-func LoginHandler(w http.ResponseWriter, req *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-	if req.Method != http.MethodPost {
-		w.WriteHeader(http.StatusUnsupportedMediaType)
-		fmt.Fprintf(w, `{"error": "method not allowed"}`)
-
-		return
-	}
-
-	if req.Header.Get("Content-Type") != "application/json" {
-		w.WriteHeader(http.StatusUnsupportedMediaType)
-		fmt.Fprintf(w, `{"error": "Content-Type must be application/json"}`)
-		return
-	}
-	if req.Body == nil {
-		fmt.Fprintf(w, `{"error": "empty body"}`)
-
-		return
-	}
-	defer req.Body.Close()
-	var request dto.LoginRequest
-	decoder := json.NewDecoder(req.Body)
-	decoder.DisallowUnknownFields()
-	if err := decoder.Decode(&request); err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		if err == io.EOF {
-			fmt.Fprintf(w, `{"error": "request body is empty"}`)
-		} else {
-			fmt.Fprintf(w, `{"error": "invalid JSON: %s"}`, err.Error())
-		}
-		return
-	}
-	// config
-	cfg := database.Config{
-		Host:     "localhost",
-		Port:     "3306",
-		User:     "root",
-		Password: "",
-		DBName:   "gameapp_db",
-	}
-	// new connection
-	db, dErr := database.NewConn(cfg)
-	if dErr != nil {
-		log.Println("error in connecting to mysq", dErr)
-		return
-	}
-	defer db.Close()
-	ctx := req.Context()
-	// create repository
-	userRepo := repository.NewUser(db)
-	// create service and inject repository into service
-	authService := service.NewAuth(userRepo, "secret")
-	token, ucErr := authService.Login(ctx, &request)
-	if ucErr != nil {
-		fmt.Fprint(w, ucErr)
-		return
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(token)
-
-}
-func userRegisterHandler(res http.ResponseWriter, req *http.Request) {
-	res.Header().Set("Content-Type", "application/json")
-	if req.Method != http.MethodPost {
-		fmt.Fprintf(res, "You are not Registered")
-		return
-	}
-	if req.Body == nil {
-		fmt.Fprintf(res, "empty_body %s", "request body is required")
-		return
-	}
-	defer req.Body.Close()
-
-	if req.Header.Get("Content-Type") != "application/json" {
-		res.WriteHeader(http.StatusUnsupportedMediaType)
-		fmt.Fprintf(res, `{"error": "Content-Type must be application/json"}`)
-		return
-	}
-
-	var request dto.RegisterRequest
-	decoder := json.NewDecoder(req.Body)
-	decoder.DisallowUnknownFields()
-	if err := decoder.Decode(&request); err != nil {
-		res.WriteHeader(http.StatusBadRequest)
-		if err == io.EOF {
-			fmt.Fprintf(res, `{"error": "request body is empty"}`)
-		} else {
-			fmt.Fprintf(res, `{"error": "invalid JSON: %s"}`, err.Error())
-		}
-		return
-	}
-	// config
-	cfg := database.Config{
-		Host:     "localhost",
-		Port:     "3306",
-		User:     "root",
-		Password: "",
-		DBName:   "gameapp_db",
-	}
-	// new connection
-	db, dErr := database.NewConn(cfg)
-	if dErr != nil {
-		log.Println("error in connecting to mysq", dErr)
-		return
-	}
-	defer db.Close()
-	// create repository
-	userRepo := UserRepository.New(db)
-	// create service and inject repository into service
-	userService := service.NewUser(userRepo)
-	userCreated, ucErr := userService.Register(request)
-	if ucErr != nil {
-		fmt.Fprint(res, ucErr)
-		return
-	}
-
-	res.Header().Set("Content-Type", "application/json")
-	res.WriteHeader(http.StatusOK)
-	json.NewEncoder(res).Encode(userCreated)
 }
