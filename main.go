@@ -10,6 +10,8 @@ import (
 	"gameapp/service"
 	"log"
 	"net/http"
+
+	_ "github.com/go-sql-driver/mysql"
 )
 
 func main() {
