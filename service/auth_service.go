@@ -1,7 +1,6 @@
 package service
 
 import (
-	"context"
 	"errors"
 	"fmt"
 	contract "gameapp/contract"
@@ -112,11 +111,11 @@ func (s *Auth) Register(req dto.RegisterRequest) (dto.RegisterResponse, error) {
 		return dto.RegisterResponse{}, fmt.Errorf("❌phone number is invalid")
 	}
 	// check uniqueness of number
-	if userExists, pErr := s.repo.FindByPhoneNumber(req.PhoneNumber); pErr != nil || userExists == nil {
+	if userExists, pErr := s.repo.ExistsByPhoneNumber(req.PhoneNumber); pErr != nil || userExists {
 		if pErr != nil {
 			return dto.RegisterResponse{}, fmt.Errorf("❌unexpected error in validation of number %v", pErr)
 		}
-		if userExists == nil {
+		if userExists {
 			return dto.RegisterResponse{}, fmt.Errorf("❌phone is not unique")
 		}
 
@@ -151,11 +150,6 @@ func (s *Auth) Register(req dto.RegisterRequest) (dto.RegisterResponse, error) {
 		PhoneNumber: user.PhoneNumber,
 		Message:     " 🎉✨ You have successfully registered! 😃 ",
 	}, nil
-}
-
-// validate user
-func (s *Auth) validateUser(ctx context.Context, phoneNumber, password string) (*entity.User, error) {
-	return nil, nil
 }
 
 func hashPassword(password string) string {
