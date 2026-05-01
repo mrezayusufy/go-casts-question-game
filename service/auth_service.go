@@ -67,7 +67,7 @@ func (s *Auth) GetProfile(id uint) (*entity.Profile, error) {
 }
 
 // update profile
-func (s *Auth) UpdateProfile(id uint, name, phonenumber string) (*entity.Profile, error) {
+func (s *Auth) UpdateProfile(id uint, name string) (*entity.Profile, error) {
 	user, err := s.repo.FindByID(id)
 	if err != nil {
 		return nil, err
@@ -76,7 +76,6 @@ func (s *Auth) UpdateProfile(id uint, name, phonenumber string) (*entity.Profile
 		return nil, ErrUserNotFound
 	}
 	user.Name = name
-	user.PhoneNumber = phonenumber
 	if err := s.repo.Update(user); err != nil {
 		return nil, err
 	}

@@ -147,7 +147,7 @@ func (h *Auth) UpdateProfile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	profile, err := h.authService.UpdateProfile(userID, req.Name, req.PhoneNumber)
+	profile, err := h.authService.UpdateProfile(userID, req.Name)
 	if err != nil {
 		h.writeError(w, http.StatusInternalServerError, "internal server error")
 
