@@ -38,18 +38,29 @@ func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	handler.ServeHTTP(w, req)
 }
 
+// SimpleMux is a basic HTTP router
 type SimpleMux struct {
-	routes map[string]map[string]http.HandlerFunc
+	routes map[string]map[string]http.Handler
 }
 
 func NewSimpleMux() *SimpleMux {
 	return &SimpleMux{
-		routes: make(map[string]map[string]http.HandlerFunc),
+		routes: make(map[string]map[string]http.Handler),
 	}
 }
+
+// HandleFunc registers a handler function for a method and path
 func (m *SimpleMux) HandleFunc(method, path string, handler http.HandlerFunc) {
 	if m.routes[path] == nil {
-		m.routes[path] = make(map[string]http.HandlerFunc)
+		m.routes[path] = make(map[string]http.Handler)
+	}
+	m.routes[path][strings.ToUpper(method)] = handler
+}
+
+// Handle registers a handler for a method and path
+func (m *SimpleMux) Handle(method, path string, handler http.Handler) {
+	if m.routes[path] == nil {
+		m.routes[path] = make(map[string]http.Handler)
 	}
 	m.routes[path][strings.ToUpper(method)] = handler
 }
@@ -57,20 +68,20 @@ func (m *SimpleMux) HandleFunc(method, path string, handler http.HandlerFunc) {
 func (m *SimpleMux) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	method := strings.ToUpper(r.Method)
 	path := r.URL.Path
+
 	if handlers, ok := m.routes[path]; ok {
 		if handler, ok := handlers[method]; ok {
-			handler(w, r)
-
+			handler.ServeHTTP(w, r)
 			return
 		}
-		// method not allowed
+		// Method not allowed
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusMethodNotAllowed)
 		w.Write([]byte(`{"error": "method not allowed"}`))
-
 		return
 	}
 
+	// Not found
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusNotFound)
 	w.Write([]byte(`{"error": "not found"}`))
