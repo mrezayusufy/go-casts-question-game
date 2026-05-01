@@ -17,13 +17,13 @@ func AuthMiddleware(jwtsecret string) func(http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			authHeader := r.Header.Get("Authorization")
 			if authHeader == "" {
-				writeJSONError(w, `{"error": "authorization header required"}`, http.StatusUnauthorized)
+				writeJSONError(w, "authorization header required", http.StatusUnauthorized)
 
 				return
 			}
 			parts := strings.Split(authHeader, " ")
 			if len(parts) != 2 || strings.ToLower(parts[0]) != "bearer" {
-				writeJSONError(w, `{"error": "invalid authorization header format"}`, http.StatusUnauthorized)
+				writeJSONError(w, "invalid authorization header format", http.StatusUnauthorized)
 
 				return
 			}
@@ -37,14 +37,14 @@ func AuthMiddleware(jwtsecret string) func(http.Handler) http.Handler {
 			})
 
 			if tErr != nil || !token.Valid {
-				writeJSONError(w, `{"error": "invalid token"}`, http.StatusUnauthorized)
+				writeJSONError(w, "invalid token", http.StatusUnauthorized)
 
 				return
 			}
 
 			claims, ok := token.Claims.(jwt.MapClaims)
 			if !ok {
-				writeJSONError(w, `{"error":"invalid token claims"}`, http.StatusUnauthorized)
+				writeJSONError(w, "invalid token claims", http.StatusUnauthorized)
 
 				return
 			}

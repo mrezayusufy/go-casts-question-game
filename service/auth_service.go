@@ -89,14 +89,12 @@ func (s *Auth) ChangePassword(id uint, oldPassword, newPassword string) error {
 	if user == nil {
 		return ErrUserNotFound
 	}
-	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(oldPassword)); err != nil {
-		return err
+	// Verify old password
+	if cErr := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(oldPassword)); cErr != nil {
+		return cErr
 	}
 
-	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(newPassword), bcrypt.DefaultCost)
-	if err != nil {
-		return err
-	}
+	hashedPassword := hashPassword(newPassword)
 
 	user.Password = string(hashedPassword)
 	return s.repo.Update(user)

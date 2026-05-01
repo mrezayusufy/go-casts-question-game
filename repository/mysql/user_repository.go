@@ -77,9 +77,9 @@ func (r *UserRepository) FindByPhoneNumber(phonenumber string) (*entity.User, er
 // find by id
 func (r *UserRepository) FindByID(userID uint) (*entity.User, error) {
 	// query
-	query := `SELECT id, name, phone_number FROM users WHERE id = ?;`
+	query := `SELECT id, name, phone_number, password FROM users WHERE id = ?;`
 	user := &entity.User{}
-	err := r.db.QueryRow(query, userID).Scan(&user.ID, &user.Name, &user.PhoneNumber)
+	err := r.db.QueryRow(query, userID).Scan(&user.ID, &user.Name, &user.PhoneNumber, &user.Password)
 	if err != nil {
 		return nil, err
 	}

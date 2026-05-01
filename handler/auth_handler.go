@@ -195,7 +195,7 @@ func (h *Auth) ChangePassword(w http.ResponseWriter, r *http.Request) {
 
 			return
 		}
-		h.writeError(w, http.StatusInternalServerError, "internal server error")
+		h.writeError(w, http.StatusInternalServerError, cErr.Error())
 
 		return
 	}
