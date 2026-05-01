@@ -4,9 +4,9 @@ import (
 	"encoding/json"
 	"errors"
 	"gameapp/dto"
+	"gameapp/middleware"
 	"gameapp/service"
 	"net/http"
-	"strconv"
 )
 
 type Auth struct {
@@ -100,7 +100,7 @@ func (h *Auth) GetProfile(w http.ResponseWriter, r *http.Request) {
 
 		return
 	}
-	userID := getUserIDFromContext(r)
+	userID := middleware.GetUserIDFromContext(r.Context())
 	if userID == 0 {
 		h.writeError(w, http.StatusUnauthorized, "unauthorized")
 		return
@@ -127,7 +127,7 @@ func (h *Auth) UpdateProfile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userID := getUserIDFromContext(r)
+	userID := middleware.GetUserIDFromContext(r.Context())
 	if userID == 0 {
 		h.writeError(w, http.StatusUnauthorized, "unauthorized")
 
@@ -164,7 +164,7 @@ func (h *Auth) ChangePassword(w http.ResponseWriter, r *http.Request) {
 
 		return
 	}
-	userID := getUserIDFromContext(r)
+	userID := middleware.GetUserIDFromContext(r.Context())
 	if userID == 0 {
 		h.writeError(w, http.StatusUnauthorized, "unauthorized")
 
@@ -215,18 +215,3 @@ func (h *Auth) writeJSON(w http.ResponseWriter, status int, data interface{}) {
 func (h *Auth) writeError(w http.ResponseWriter, status int, msg string) {
 	h.writeJSON(w, status, dto.ErrorResponse{Error: msg})
 }
-
-// get user id from context
-func getUserIDFromContext(r *http.Request) uint {
-	userIDStr := r.Context().Value("user_id")
-	if userIDStr == nil {
-		return 0
-	}
-	userID, err := strconv.ParseUint(userIDStr.(string), 10, 64)
-	if err != nil {
-		return 0
-	}
-	return uint(userID)
-}
-
-// get path params

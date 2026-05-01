@@ -48,11 +48,12 @@ func AuthMiddleware(jwtsecret string) func(http.Handler) http.Handler {
 
 				return
 			}
-
 			userID := uint(claims["user_id"].(float64))
 
-			ctx := r.Context()
-			ctx = context.WithValue(r.Context(), UserIDKey, userID)
+			// Set user ID in context
+			ctx := context.WithValue(r.Context(), UserIDKey, userID)
+
+			// Continue to next handler
 			next.ServeHTTP(w, r.WithContext(ctx))
 		})
 	}
@@ -61,4 +62,11 @@ func writeJSONError(w http.ResponseWriter, message string, status int) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
 	w.Write([]byte(`{"error": ` + message + `}`))
+}
+func GetUserIDFromContext(ctx context.Context) uint {
+	userID, ok := ctx.Value(UserIDKey).(uint)
+	if !ok {
+		return 0
+	}
+	return userID
 }
